@@ -2,6 +2,7 @@ package util
 
 import (
 	"database/sql"
+	"errors"
 )
 
 type TogFileManager struct {
@@ -13,13 +14,13 @@ type TogFile struct {
 	Tags []Tag
 }
 
-func (t *TogFileManager) NewFile(file string) error {
-	is_present, err := t.IsPresent(file)
+func (t *TogFileManager) SerializeFile(file string) error {
+	present, err := t.IsPresent(file)
 	if err != nil {
 		return err
 	}
 
-	if is_present {
+	if present {
 		return TogFileExists
 	}
 
@@ -43,7 +44,7 @@ func (t *TogFileManager) NewFile(file string) error {
 	return nil
 }
 
-func (t *TogFileManager) GetFile(file string) (TogFile, error) {
+func (t *TogFileManager) GetManagedFile(file string) (TogFile, error) {
 	present, err := t.IsPresent(file)
 	if err != nil {
 		return TogFile{}, err
@@ -63,27 +64,27 @@ func (t *TogFileManager) GetFile(file string) (TogFile, error) {
 		FROM managed_filepaths m
 		JOIN file_tags f ON m.file_id = f.file_id
 		JOIN tags_definition t on f.tag_id = t.tag_id
-		WHERE filepath = ?;`, 
-		file)
+		WHERE filepath = ?;`,
+		file,
+	)
 
 	if err != nil {
 		return TogFile{}, err
 	}
 	defer rows.Close()
 
-
 	tog_file := TogFile{
 		File: file,
 		Tags: make([]Tag, 0),
 	}
 
-	for ; rows.Next(); {
+	for rows.Next() {
 		var file_path string
 		var tag_name string
 		rows.Scan(&file_path, &tag_name)
 
-		tag := Tag {
-			Name: tag_name,
+		tag := Tag{
+			Name:        tag_name,
 			Description: "",
 		}
 
@@ -99,27 +100,58 @@ func (t *TogFileManager) GetFile(file string) (TogFile, error) {
 	return tog_file, nil
 }
 
-func (t *TogFileManager) IsPresent(file string) (bool, error) {
-	tx, err := t.Db.Begin()
-	if err != nil {
-		return false, err
+func (t *TogFileManager) GetFileID(file string) (uint64, error) {
+	row := t.Db.QueryRow("SELECT file_id FROM managed_filepaths WHERE file_path = ?;", file)
+	var result uint64
+	if err := row.Scan(&result); err != nil {
+		return 0, errors.Join(err, TogFileNotFound)
 	}
+	return result, nil
+}
 
-	row := tx.QueryRow("SELECT 1 FROM managed_filepaths WHERE file_path = ?", file)
+func (t *TogFileManager) IsPresent(file string) (bool, error) {
+	row := t.Db.QueryRow("SELECT 1 FROM managed_filepaths WHERE file_path = ?;", file)
 	var result int
 	if err := row.Scan(&result); err != nil {
 		return false, err
 	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return false, err
-	}
-
 	return result == 1, nil
 }
 
 func (t *TogFileManager) AssociateTag(file string, tags []Tag) error {
+	file_id, err := t.GetFileID(file)
+	if err != nil {
+		return err
+	}
+
+	tag_mgr := TagManager{
+		Db: t.Db,
+	}
+
+	tx, err := tag_mgr.Db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// PERF: check whether batching or discrete db calls is better
+	for _, tag := range tags {
+		tag_id, err := tag_mgr.GetTagID(tag)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		_, err = tx.Exec("INSERT INTO file_tags (file_id, tag_id) VALUES(?, ?);", file_id, tag_id)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
 	return nil
 }

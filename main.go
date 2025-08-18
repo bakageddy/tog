@@ -2,12 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"flag"
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 
 	_ "github.com/glebarez/go-sqlite"
 )
@@ -77,41 +75,5 @@ func database_init(db *sql.DB, schema_path string) error {
 		return err
 	}
 
-	return nil
-}
-
-func add_tag(db *sql.DB, file string, tag string) error {
-	if db == nil {
-		return errors.New("Uninitialized DB")
-	}
-
-	// DEFAULT flag value
-	if file == "." {
-		return errors.New("Flag `file` must be provided")
-	}
-
-	_, err := os.Stat(file)
-	if errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	file, err = filepath.Abs(file)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-
-	tx.Exec("INSERT INTO managed_filepaths(filepath) VALUES (?);", file)
-	tx.Exec("INSERT INTO tags_definition(tag_name, tag_description) VALUES (?, ?);", tag, tag_description)
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
 	return nil
 }
