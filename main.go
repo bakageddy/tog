@@ -7,30 +7,28 @@ import (
 	"log"
 	"os"
 
+	"github.com/bakageddy/tog/types"
+	"github.com/bakageddy/tog/util"
 	_ "github.com/glebarez/go-sqlite"
 )
 
 var (
-	file       string
-	tag        string
-	flag_count uint8 = 0
+	file string
+	tag  string
+	cmd  string
 )
 
 func main() {
+	// FIX:
 	// TODO: I do not know any good default file path
 	flag.StringVar(&file, "file", ".", "Set the file path")
 	flag.StringVar(&tag, "tag", "default", "Add Tag to the file")
+	flag.StringVar(&cmd, "cmd", "add", util.CommandDescription)
 
 	if len(os.Args) == 1 {
 		flag.Usage()
 		return
 	}
-
-	flag.VisitAll(func(f *flag.Flag) {
-		if f.Value.String() != f.DefValue {
-			flag_count += 1
-		}
-	})
 
 	db, err := sql.Open("sqlite", "tags.db")
 	if err != nil {
@@ -44,7 +42,15 @@ func main() {
 	}
 
 	flag.Parse()
-	log.Println("PARSED: ", flag_count)
+
+	tfm := types.TogManager{Db: db}
+	cmd_type := util.Mux(cmd)
+	switch cmd_type {
+	case util.AddFile:
+		tfm.ManageFile(file)
+	case util.RemoveFile:
+	tfm.ReleaseFile(file)	
+	}
 }
 
 func database_init(db *sql.DB, schema_path string) error {
