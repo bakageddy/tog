@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/bakageddy/tog/util"
-	"golang.org/x/tools/present"
 )
 
 // File must be managed and must exist on the file system
@@ -22,6 +21,24 @@ func (t *TogManager) IsPresent(file string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (t *TogManager) GetFile(file string) (TogFile, error) {
+	present, err := t.IsPresent(file)
+	if err != nil {
+		return TogFile{}, err
+	}
+
+	if !present {
+		return TogFile{}, TogUnreachable
+	}
+
+	result := TogFile{}
+	row := t.Db.QueryRow("SELECT file_id, filepath FROM managed_filepaths WHERE filepath = ?", file)
+	if err := row.Scan(&result.Id, &result.Path); err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 func (t *TogManager) ManageFile(file string) error {
@@ -59,10 +76,54 @@ func (t *TogManager) ReleaseFile(file string) error {
 	if err != nil {
 		return err
 	}
+
+	if !present {
+		return TogUnreachable
+	}
+
+	tx, err := t.Db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE * FROM managed_filepaths WHERE filepath = ?", file)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec("DELETE * FROM file_tags WHERE ")
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
-func (t *TogManager) GetFile(file string) (TogFile, error) {
-}
+func (t *TogManager) AssociateTag(files []TogFile, tag TogTag) error {
+	tx, err := t.Db.Begin()
+	if err != nil {
+		return err
+	}
 
-func (t *TogManager) AssociateTag(file []string, tags TogTag) error {
+	query := "INSERT INTO file_tags (file_id, tag_id) VALUES (?, ?);"
+	for _, file := range files {
+		if _, err := tx.Exec(query, file.Id, tag.Id); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
 }

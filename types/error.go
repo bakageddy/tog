@@ -5,6 +5,7 @@ import "errors"
 type TogError error
 
 var (
+	TogUnreachable	  TogError = errors.New("Unreachable")
 	TogFileDeleted    TogError = errors.New("Managed File Deleted")
 
 	TogFileExists     TogError = errors.New("File Exists")
