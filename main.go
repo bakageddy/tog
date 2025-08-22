@@ -2,7 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -46,10 +48,31 @@ func main() {
 	tfm := types.TogManager{Db: db}
 	cmd_type := util.Mux(cmd)
 	switch cmd_type {
-	case util.AddFile:
-		tfm.ManageFile(file)
-	case util.RemoveFile:
-	tfm.ReleaseFile(file)	
+	case util.AddFile: {
+		err := tfm.ManageFile(file)
+		if errors.Is(types.TogFileNotManaged, err) {
+			fmt.Fprintf(os.Stderr, "%s not managed by tog, consider adding it\n", file)
+		} else if errors.Is(types.TogFileDeleted, err) {
+			// TODO: fix this issue, add isPresent, isManaged, isDeleted
+			fmt.Fprintf(os.Stderr, "%s seems to be deleted/not found, consider removing it\n", file)
+		} else if err != nil {
+			log.Println(err.Error())
+		} else {
+			log.Printf("Managing %s\n", file)
+		}
+	}
+		
+	case util.RemoveFile: {
+		err := tfm.ReleaseFile(file)	
+		if errors.Is(types.TogFileNotManaged, err) {
+			fmt.Fprintf(os.Stderr, "%s not managed by tog", file)
+		} else if errors.Is(types.TogFileDeleted, err) {
+			fmt.Fprintf(os.Stderr, "%s already deleted", file)
+		} else if err != nil {
+			log.Println(err.Error())
+		}
+	}
+	case util.SearchFile:
 	}
 }
 

@@ -1,12 +1,15 @@
 package types
 
 import (
+	"errors"
+
 	"github.com/bakageddy/tog/util"
 )
 
 // File must be managed and must exist on the file system
 func (t *TogManager) IsPresent(file string) (bool, error) {
-	row := t.Db.QueryRow("SELECT 1 FROM managed_filepaths WHERE file_path = ?;", file)
+	// FIX: SELECT 1 is not getting in to the resultset
+	row := t.Db.QueryRow("SELECT 1 FROM managed_filepaths WHERE filepath = ?;", file)
 	var result int
 	if err := row.Scan(&result); err != nil {
 		return false, err
@@ -72,27 +75,23 @@ func (t *TogManager) ManageFile(file string) error {
 }
 
 func (t *TogManager) ReleaseFile(file string) error {
-	present, err := t.IsPresent(file)
-	if err != nil {
-		return err
-	}
-
-	if !present {
-		return TogUnreachable
-	}
-
 	tx, err := t.Db.Begin()
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec("DELETE * FROM managed_filepaths WHERE filepath = ?", file)
+	togfile, err := t.GetFile(file)
+	if err != nil && errors.Is(err, TogFileNotManaged) {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE * FROM managed_filepaths WHERE file_id = ?;", togfile.Id)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	_, err = tx.Exec("DELETE * FROM file_tags WHERE ")
+	_, err = tx.Exec("DELETE * FROM file_tags WHERE file_id = ?;", togfile.Id)
 	if err != nil {
 		tx.Rollback()
 		return err
