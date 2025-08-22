@@ -125,5 +125,28 @@ func (t *TogManager) AssociateTag(files []TogFile, tag TogTag) error {
 		tx.Rollback()
 		return err
 	}
+
+	return nil
+}
+
+func (t *TogManager) DisassociateTag(files []TogFile, tag TogTag) error {
+	tx, err := t.Db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := "DELETE FROM file_tags WHERE file_id = ? AND tag_id = ?;"
+	for _, file := range files {
+		if _, err := tx.Exec(query, file.Id, tag.Id); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return nil
 }
