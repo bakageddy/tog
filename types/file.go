@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/bakageddy/tog/util"
 )
@@ -32,6 +33,30 @@ func (t *TogManager) IsPresent(file string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (t *TogManager) SearchFile(fileglob string) ([]TogFile, error) {
+	if !strings.HasSuffix(fileglob, "*") {
+		fileglob += "%"
+	}
+
+	query := "SELECT file_id, filepath FROM managed_filepaths WHERE filepath LIKE ?;"
+	rows, err := t.Db.Query(query, fileglob)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]TogFile, 0)
+	for rows.Next() {
+		temp := TogFile{}
+		err := rows.Scan(&temp.Id, &temp.Path)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, temp)
+	}
+
+	return result, nil
 }
 
 func (t *TogManager) GetFile(file string) (TogFile, error) {

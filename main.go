@@ -69,14 +69,26 @@ func main() {
 	case util.RemoveFile: {
 		err := tfm.ReleaseFile(file)	
 		if errors.Is(types.TogFileNotManaged, err) {
-			fmt.Fprintf(os.Stderr, "%s not managed by tog", file)
+			fmt.Fprintf(os.Stderr, "%s not managed by tog\n", file)
 		} else if errors.Is(types.TogFileDeleted, err) {
-			fmt.Fprintf(os.Stderr, "%s already deleted", file)
+			fmt.Fprintf(os.Stderr, "%s already deleted\n", file)
 		} else if err != nil {
 			log.Println(err.Error())
 		}
 	}
-	case util.SearchFile:
+	case util.SearchFile: {
+		files, err := tfm.SearchFile(file)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Something wrong happened: %s\n", err.Error())
+			return
+		} else {
+			for _, file := range files {
+				fmt.Printf("Id: %d, Path: %s\n", file.Id, file.Path)
+			}
+		}
+	}
+	default: 
+		log.Println("Unrecognized Command: ", cmd)
 	}
 }
 
