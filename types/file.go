@@ -1,8 +1,8 @@
 package types
 
 import (
+	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/bakageddy/tog/util"
 )
@@ -12,27 +12,19 @@ func (t *TogManager) IsManaged(file string) (bool, error) {
 	var result int
 	err := row.Scan(&result);
 	if errors.Is(sql.ErrNoRows, err) {
-
-	}
-	if err := row.Scan(&result); err != nil {
+		return false, nil
+	} else if err != nil {
 		return false, err
+	} else {
+		return result == 1, nil
 	}
-
-	log.Println(result)
-	return true, nil
 }
 
 // File must be managed and must exist on the file system
 func (t *TogManager) IsPresent(file string) (bool, error) {
-	// FIX: SELECT 1 is not getting in to the resultset
-	row := t.Db.QueryRow("SELECT 1 FROM managed_filepaths WHERE filepath = ?;", file)
-	var result int
-	if err := row.Scan(&result); err != nil {
+	managed, err := t.IsManaged(file)
+	if err != nil || !managed {
 		return false, err
-	}
-
-	if result != 1 {
-		return false, TogFileNotManaged
 	}
 
 	if !util.FileExists(file) {
