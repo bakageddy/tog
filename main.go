@@ -27,6 +27,9 @@ func main() {
 	flag.StringVar(&tag, "tag", "default", "Add Tag to the file")
 	flag.StringVar(&cmd, "cmd", "add", util.CommandDescription)
 
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Lshortfile | log.Ldate)
+
 	if len(os.Args) == 1 {
 		flag.Usage()
 		return
@@ -49,6 +52,7 @@ func main() {
 	cmd_type := util.Mux(cmd)
 	switch cmd_type {
 	case util.AddFile: {
+		tfm.IsManaged(file)
 		err := tfm.ManageFile(file)
 		if errors.Is(types.TogFileNotManaged, err) {
 			fmt.Fprintf(os.Stderr, "%s not managed by tog, consider adding it\n", file)

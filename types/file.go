@@ -2,9 +2,25 @@ package types
 
 import (
 	"errors"
+	"log"
 
 	"github.com/bakageddy/tog/util"
 )
+
+func (t *TogManager) IsManaged(file string) (bool, error) {
+	row := t.Db.QueryRow("SELECT 1 as ROW_COUNT FROM managed_filepaths WHERE filepath = ? LIMIT 1;", file)
+	var result int
+	err := row.Scan(&result);
+	if errors.Is(sql.ErrNoRows, err) {
+
+	}
+	if err := row.Scan(&result); err != nil {
+		return false, err
+	}
+
+	log.Println(result)
+	return true, nil
+}
 
 // File must be managed and must exist on the file system
 func (t *TogManager) IsPresent(file string) (bool, error) {
