@@ -14,6 +14,8 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
+// TODO: implement your own command line parsing library?
+// 		 Or just improve it from the default
 var (
 	file string
 	tag  string
@@ -87,8 +89,11 @@ func main() {
 			}
 		}
 	}
+
+	case util.AddTag: {
+	}
 	default: 
-		log.Println("Unrecognized Command: ", cmd)
+		log.Println("Not yet implemented")
 	}
 }
 
