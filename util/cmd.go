@@ -22,17 +22,17 @@ const (
 )
 
 const CommandDescription string = `Command Options:
-add, add-file 					Add File to be managed (default)
-rm, remove, remove-file 		Remove File from being managed
-s, search 						Search managed files
-fetch							Fetch file(s) under a tag
+add, add-file                          Add File to be managed (default)
+rm, remove, remove-file                Remove File from being managed
+s, search                              Search managed files
+fetch                                  Fetch file(s) under a tag
 
-add-tag 						Create new tag
-remove-tag 						Remove tag
-search-tag 						Search among tag(s)
+add-tag                                Create new tag
+remove-tag                             Remove tag
+search-tag                             Search among tag(s)
 
-a, associate					Associate file(s) with tag
-d, disassociate					Disassociate file(s) with tag
+a, associate                           Associate file(s) with tag
+d, disassociate                        Disassociate file(s) with tag
 `
 
 func Mux(cmd string) CmdType {
