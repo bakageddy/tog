@@ -14,19 +14,20 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
-// TODO: implement your own command line parsing library?
-// 		 Or just improve it from the default
+// TODO: implement your own command line parsing library / explore go.flag
 var (
-	file string
-	tag  string
-	cmd  string
+	file     string
+	tag      string
+	tag_desc string
+	cmd      string
 )
 
 func main() {
 	// FIX:
 	// TODO: I do not know any good default file path
 	flag.StringVar(&file, "file", ".", "Set the file path")
-	flag.StringVar(&tag, "tag", "default", "Add Tag to the file")
+	flag.StringVar(&tag, "tag", "default", "Name of the Tag")
+	flag.StringVar(&tag_desc, "tag-desc", "null", "Description of the Tag")
 	flag.StringVar(&cmd, "cmd", "add", util.CommandDescription)
 
 	log.SetOutput(os.Stdout)
@@ -53,7 +54,8 @@ func main() {
 	tfm := types.TogManager{Db: db}
 	cmd_type := util.Mux(cmd)
 	switch cmd_type {
-	case util.AddFile: {
+	case util.AddFile:
+
 		tfm.IsManaged(file)
 		err := tfm.ManageFile(file)
 		if errors.Is(types.TogFileNotManaged, err) {
@@ -66,10 +68,10 @@ func main() {
 		} else {
 			log.Printf("Managing %s\n", file)
 		}
-	}
-		
-	case util.RemoveFile: {
-		err := tfm.ReleaseFile(file)	
+
+	case util.RemoveFile:
+
+		err := tfm.ReleaseFile(file)
 		if errors.Is(types.TogFileNotManaged, err) {
 			fmt.Fprintf(os.Stderr, "%s not managed by tog\n", file)
 		} else if errors.Is(types.TogFileDeleted, err) {
@@ -77,8 +79,9 @@ func main() {
 		} else if err != nil {
 			log.Println(err.Error())
 		}
-	}
-	case util.SearchFile: {
+
+	case util.SearchFile:
+
 		files, err := tfm.SearchFile(file)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Something wrong happened: %s\n", err.Error())
@@ -88,11 +91,22 @@ func main() {
 				fmt.Printf("Id: %d, Path: %s\n", file.Id, file.Path)
 			}
 		}
-	}
 
-	case util.AddTag: {
-	}
-	default: 
+	case util.AddTag:
+		err := tfm.NewTag(tag, tag_desc)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Something wrong happened: %s\n", err.Error())
+			return
+		}
+
+	case util.RemoveTag:
+		err := tfm.RemoveTag(tag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Something wrong happened: %s\n", err.Error())
+			return
+		}
+
+	default:
 		log.Println("Not yet implemented")
 	}
 }

@@ -10,7 +10,7 @@ import (
 
 func (t *TogManager) IsManaged(file string) (bool, error) {
 	row := t.Db.QueryRow("SELECT 1 as ROW_COUNT FROM managed_filepaths WHERE filepath = ? LIMIT 1;", file)
-	var result int
+	var result uint8
 	err := row.Scan(&result);
 	if errors.Is(sql.ErrNoRows, err) {
 		return false, nil
