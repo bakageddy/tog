@@ -106,6 +106,16 @@ func main() {
 			return
 		}
 
+	case util.SearchTag:
+		tags, err := tfm.SearchTag(tag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Something went wrong: %s\n", err.Error())
+			return
+		}
+
+		for _, t := range tags {
+			fmt.Printf("Tag Name: %s\t\tTag Description: %s\n", t.Name, t.Description)
+		}
 	default:
 		log.Println("Not yet implemented")
 	}

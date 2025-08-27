@@ -131,3 +131,20 @@ func (t *TogManager) SearchTag(tag_glob string) ([]TogTag, error) {
 
 	return tags, nil
 }
+
+func (t *TogManager) ListTag() ([]TogTag, error) {
+	rows, err := t.Db.Query("SELECT tag_id, tag_name, tag_description FROM tags_definition;")
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]TogTag, 0)
+	for rows.Next() {
+		temp := TogTag{}
+		if err := rows.Scan(&temp.Id, &temp.Name, &temp.Description); err != nil {
+			return result, err
+		}
+		result = append(result, temp)
+	}
+	return result, nil
+}
