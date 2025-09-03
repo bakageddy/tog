@@ -1,5 +1,7 @@
 package util
 
+import "github.com/bakageddy/tog/types"
+
 type CmdType uint8
 
 const (
@@ -18,6 +20,7 @@ const (
 	AssociateTag
 	DisassociateTag
 	FetchFile
+	FetchTags
 
 	// TODO: Implement these operation
 	// JsonDump
@@ -38,6 +41,7 @@ list-tag                               List all tags
 a, associate                           Associate file(s) with tag
 d, disassociate                        Disassociate file(s) with tag
 fetch                                  Fetch file(s) under a tag
+fetch-tags                             Fetch tag(s) under a file
 `
 
 func Mux(cmd string) CmdType {
@@ -48,17 +52,54 @@ func Mux(cmd string) CmdType {
 		return RemoveFile
 	case "search", "search-file":
 		return SearchFile
+	case "list":
+		return ListFile
 	case "add-tag":
 		return AddTag
 	case "remove-tag":
 		return RemoveTag
 	case "search-tag":
 		return SearchTag
+	case "list-tag":
+		return ListTag
 	case "associate", "a":
 		return AssociateTag
 	case "disassociate", "d":
 		return DisassociateTag
+	case "fetch":
+		return FetchFile
 	default:
 		return UnknownCommand
+	}
+}
+
+func Parse(t CmdType, args []string) error {
+	switch t {
+	case AddFile:
+		return AddFileFlags.Parse(args)
+	case RemoveFile:
+		return RemoveFileFlags.Parse(args)
+	case SearchFile:
+		return SearchFileFlags.Parse(args)
+	case ListFile:
+		return ListFileFlags.Parse(args)
+	case AddTag:
+		return AddFileFlags.Parse(args)
+	case RemoveTag:
+		return RemoveTagFlags.Parse(args)
+	case SearchTag:
+		return SearchTagFlags.Parse(args)
+	case ListTag:
+		return ListTagFlags.Parse(args)
+	case AssociateTag:
+		return AssociateTagFlags.Parse(args)
+	case DisassociateTag:
+		return DisassociateTagFlags.Parse(args)
+	case FetchFile:
+		return FetchFileFlags.Parse(args)
+	case FetchTags:
+		return FetchTagsFlags.Parse(args)
+	default:
+		return types.TogUnrecognizedCommand
 	}
 }

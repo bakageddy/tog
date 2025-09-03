@@ -14,22 +14,7 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
-// TODO: implement your own command line parsing library / explore go.flag
-var (
-	file     string
-	tag      string
-	tag_desc string
-	cmd      string
-)
-
 func main() {
-	// FIX:
-	// TODO: I do not know any good default file path
-	flag.StringVar(&file, "file", ".", "Set the file path")
-	flag.StringVar(&tag, "tag", "default", "Name of the Tag")
-	flag.StringVar(&tag_desc, "tag-desc", "null", "Description of the Tag")
-	flag.StringVar(&cmd, "cmd", "add", util.CommandDescription)
-
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Lshortfile | log.Ldate)
 
