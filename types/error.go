@@ -6,7 +6,6 @@ type TogError error
 
 var (
 	TogUnreachable         TogError = errors.New("Unreachable")
-	TogUnrecognizedCommand TogError = errors.New("Unrecognized Command")
 
 	TogFileExists     TogError = errors.New("File Exists")
 	TogFileNotFound   TogError = errors.New("File Not Found")

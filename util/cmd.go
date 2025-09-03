@@ -1,6 +1,6 @@
 package util
 
-import "github.com/bakageddy/tog/types"
+import "errors"
 
 type CmdType uint8
 
@@ -100,6 +100,6 @@ func Parse(t CmdType, args []string) error {
 	case FetchTags:
 		return FetchTagsFlags.Parse(args)
 	default:
-		return types.TogUnrecognizedCommand
+		return errors.New("Tog Unknown command")
 	}
 }
