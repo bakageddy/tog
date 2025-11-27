@@ -1,8 +1,0 @@
-tog --file <FILE> --tag <TAG>
-tog --add --file <FILE> --tag <TAG>
-
-tog --tag <TAG_NAME> --tag-desc <TAG_DESCRIPTION>
-
-tog --list-tags
-
-tog --list-files
